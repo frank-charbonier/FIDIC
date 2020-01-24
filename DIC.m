@@ -21,12 +21,15 @@ function [u, cc] = DIC(varargin)
 % all functions are self contained
 %
 % If used please cite:
-% Bar-Kochba E., Toyjanova J., Andrews E., Kim K., Franck C. (2014) A fast
-% iterative digital volume correlation algorithm for large deformations.
+% Bar-Kochba E., Toyjanova J., Andrews E., Kim K., Franck C. (2014) A fast 
+% iterative digital volume correlation algorithm for large deformations. 
 % Experimental Mechanics. doi: 10.1007/s11340-014-9874-2
+% 
+% Modified by Jacob Notbohm, University of Wisconsin-Madison, 2018
+% 
 
 % Parse inputs and create meshgrid
-[I,m,mSize,sSize,MTF,M,ccThreshold,norm_xcc] = parseInputs(varargin{:});
+[I,m,mSize,sSize,MTF,M,ccThreshold] = parseInputs(varargin{:});
 
 % Initialize variables
 mSize_ = prod(mSize);
@@ -40,6 +43,7 @@ waitbar(1/7,wb,'Estimating Displacements (Time Remaining: )');
 
 for k = 1:mSize_
     
+    
     tStart = tic; % begin timer
     %-----------------------------------------------------------------------
     % grab the moving subset from the images
@@ -47,62 +51,28 @@ for k = 1:mSize_
     B = I{2}(m{1}(k,:),m{2}(k,:));
     
     % multiply by the modular transfer function to alter frequency content
-    subst = MTF.*subst; B = MTF.*B;
+    subst = MTF.*subst;
+    B = MTF.*B;
     
     % run cross-correlation
-    if strcmp(norm_xcc,'n')||strcmp(norm_xcc,'norm')||strcmp(norm_xcc,'normalized')
-        
-        subst(isnan(subst)) = 0;
-        B(isnan(B)) = 0;
-        
-        A_ = normxcorr2(subst,B);
-        A = imrotate(A_(size(B,1)/2:size(B,1)+size(B,1)/2-1, size(B,2)/2:size(B,2)+size(B,2)/2-1),180);
-        
-        %     imagesc(A); pause(0.01)
-        % find maximum index of the cross-correlaiton
-        [cc(k), maxIdx] = max(A(:));
-        
-        % compute pixel resolution displacements
-        [u1, u2] = ind2sub(sSize,maxIdx);
-        
-        % gather the 3x3 pixel neighborhood around the peak
-        try xCorrPeak = reshape(A(u1 + (-1:1), u2 + (-1:1)),9,1);
-            % least squares fitting of the peak to calculate sub-pixel displacements
-            du12 = lsqPolyFit2(xCorrPeak, M{1}, M{2});
-            u12(k,:) = [u1 u2] + du12' - (sSize/2);
-            %-----------------------------------------------------------------------
-        catch
-            u12(k,:) = nan;
-        end
-        
-    else
-        
-        A = xCorr2(subst,B,sSize); %Custom fft-based correllation - very fast,
-        %but not normalized. Be careful using this
-        %if there is a visable intensity gradient in
-        %an image
-        
-        %     imagesc(A); pause(0.01)
-        % find maximum index of the cross-correlaiton
-        [cc(k), maxIdx] = max(A(:));
-        
-        % compute pixel resolution displacements
-        [u1, u2] = ind2sub(sSize,maxIdx);
-        
-        % gather the 3x3 pixel neighborhood around the peak
-        try xCorrPeak = reshape(A(u1 + (-1:1), u2 + (-1:1)),9,1);
-            % least squares fitting of the peak to calculate sub-pixel displacements
-            du12 = lsqPolyFit2(xCorrPeak, M{1}, M{2});
-            u12(k,:) = [u1 u2] + du12' - (sSize/2) - 1;
-            %-----------------------------------------------------------------------
-        catch
-            u12(k,:) = nan;
-        end
-        
+    A = xCorr2(subst,B,sSize); %Custom fft-based correlation - very fast
+    
+    % find maximum index of the cross-correlaiton
+    [cc(k), maxIdx] = max(A(:));
+    
+    % compute pixel resolution displacements
+    [u1, u2] = ind2sub(sSize,maxIdx);
+    
+    % gather the 3x3 pixel neighborhood around the peak
+    try xCorrPeak = reshape(A(u1 + (-1:1), u2 + (-1:1)),9,1);
+        % least squares fitting of the peak to calculate sub-pixel displacements
+        du12 = lsqPolyFit2(xCorrPeak, M{1}, M{2});
+        u12(k,:) = [u1 u2] + du12' - (sSize/2) - 1;
+        %-----------------------------------------------------------------------
+    catch
+        u12(k,:) = nan;
     end
-    
-    
-    
+        
     % waitbar calculations (update only every 100 iterations)
     if rem(k,100) == 0
         tRemaining = (toc(tStart)*(mSize_ - k)); % Time remaining for waitbar
@@ -116,7 +86,7 @@ end
 waitbar(2/7,wb,'Removing Bad Correlations')
 
 cc = reshape(double(cc),mSize);
-[cc, ccMask] = removeBadCorrelations(I,cc,ccThreshold,norm_xcc);
+[cc, ccMask] = removeBadCorrelations(I,cc,ccThreshold);
 
 u{1} = reshape(double(u12(:,2)),mSize).*ccMask;
 u{2} = reshape(double(u12(:,1)),mSize).*ccMask;
@@ -133,7 +103,6 @@ sSize = varargin{2};
 sSpacing = varargin{3};
 padSize = varargin{4};
 ccThreshold = varargin{5};
-norm_xcc = varargin{6};
 
 % pad images with zeros so that we don't grab any subset outside of the image
 % domain. This would produce an error
@@ -182,7 +151,7 @@ varargout{end+1} = sSize;
 varargout{end+1} = MTF;
 varargout{end+1} = M;
 varargout{end+1} = ccThreshold;
-varargout{end+1} = norm_xcc;
+
 end
 
 %% ========================================================================
@@ -196,12 +165,11 @@ A = A.*B;
 A = ifftn(A);
 A = real(A);
 A = fftshift(A);
-
 end
 
 %% ========================================================================
 function    duvw = lsqPolyFit2(b, M, trMM)
-% LeastSqPoly performs a polynomial fit in the least squares sense
+% LeastSqPoly performs a 2D polynomial fit in the least squares sense
 % Solves M*x = b,
 % trMM = transpose(M)*M
 % trMb = tranpose(M)*b
@@ -213,7 +181,7 @@ function    duvw = lsqPolyFit2(b, M, trMM)
 % for i = 1:size(m,1)
 %    x = m(i,1); y = m(i,2); z = m(i,3);
 %    M1(i,:) = [1,x,y,z,x^2,x*y,x*z,y^2,y*z,z^2];  %3D case
-%               1 2 3 4  5   6   7   8   9   10
+%               1 2 3 4  5   6   7   8   9   10 
 
 %    M1(i,:) = [1,x,y,x^2,x*y,y^2];                %2D Case
 %               1 2 3  5   6   8
@@ -285,8 +253,8 @@ else
     
     nu{1} = ones(sSize(1),sSize(2));
     nu{2} = nu{1};
-    nu{3} = nu{1};   %==== Based on the usage and the paper this comes from
-    %nu should remain 3-dims even for the 2D case
+    nu{3} = nu{1};   %==== Based onthe usage and the paper this comes from
+                     %nu should remain 3-dims even for the 2D case
     
 end
 
@@ -298,40 +266,27 @@ varargout = nu;
 end
 
 %% ========================================================================
-function [cc, ccMask] = removeBadCorrelations(I,cc,ccThreshold,norm_xcc)
+function [cc, ccMask] = removeBadCorrelations(I,cc,ccThreshold)
 % removes bad correlations.  You can insert your own method here.
-if strcmp(norm_xcc,'n')||strcmp(norm_xcc,'norm')||strcmp(norm_xcc,'normalized')
-    
-    ccMask = ones(size(cc));
-    % use a threshold that's slightly less than (so that we can accept
-    % all datapoints in a "good" image pair) two st devs less than the mean
-    threshold1 = nanmean(cc(:)) - 2*nanstd(cc(:)) - 500*ccThreshold;
-    threshold2 = 0.5;
-    ccMask(cc < threshold1) = nan;
-    ccMask(cc < threshold2) = nan;
-    cc = cc.*ccMask;
-    
-else
-    minOS = 1;
-    for i = 1:2
-        zeroIdx = I{i} == 0;
-        threshold = mean2(I{i}(~zeroIdx));
-        I_ = I{i}.*(I{i} < threshold);
-        minOS = minOS*sum(I_(:))/sum(~zeroIdx(:));
-    end
-    cc = cc - minOS;
-    cc = cc/(max(I{1}(:))*max(I{2}(:)));
-    ccMask = double(cc >= ccThreshold);
-    
+minOS = 1;
+for i = 1:2
+    zeroIdx = I{i} == 0;
+    threshold = mean2(I{i}(~zeroIdx));
+    I_ = I{i}.*(I{i} < threshold);
+    minOS = minOS*sum(I_(:))/sum(~zeroIdx(:));
+end
+cc = cc - minOS;
+cc = cc/(max(I{1}(:))*max(I{2}(:)));
+ccMask = double(cc >= ccThreshold);
+ 
+if prod(ccMask(:)) == 0 % IF statement added 4/12/18 BY JN. This avoids an error when prod(ccMask(:))==1
     CC = bwconncomp(~ccMask);
-    if length(CC.PixelIdxList) > 0
-        [~,idx] = max(cellfun(@numel,CC.PixelIdxList));
-        ccMask(CC.PixelIdxList{idx}) = inf;
-    end
+    [~,idx] = max(cellfun(@numel,CC.PixelIdxList));
+    ccMask(CC.PixelIdxList{idx}) = inf;
     ccMask(cc == 0) = nan;
     ccMask(~isfinite(ccMask)) = 0;
-    cc = cc.*ccMask;
-    
 end
+
+cc = cc.*ccMask;
 
 end

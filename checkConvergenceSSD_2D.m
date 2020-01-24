@@ -1,10 +1,11 @@
-function [converged01, SSE1 , sSize1, sSpacing1] = checkConvergenceSSD_2D(I,SSE,sSize,sSpacing,convergenceCrit)
-% [converged01, SSD1 , sSize1, sSpacing1] =
-% checkConvergenceSSD(I,SSD,sSize,sSpacing,convergenceCrit) checks the
-% convergence of the IDVC. The convergence is based on the sum of squared
-% error (SSE) similarity metric between the undeformed and deformed
-% image.
-%
+function [converged01, SSE1 , sSize1, sSpacing1] = checkConvergenceSSD_2D(I,SSE,sSize,sSpacing,convergenceCrit,dm,wm)
+%checkConvergenceSSD_2D Check convergence of IDIC
+% 
+% [converged01, SSD1 , sSize1, sSpacing1] = checkConvergenceSSD(I, SSD, sSize, sSpacing, convergenceCrit, dm) 
+% checks the convergence of the IDIC. The convergence is based on the sum 
+% of squared error (SSE) similarity metric between the undeformed and 
+% deformed image. 
+% 
 % INPUTS
 % -------------------------------------------------------------------------
 %   I: cell containing the undeformed, I{1}, and deformed, I{2} 3-D images
@@ -15,6 +16,8 @@ function [converged01, SSE1 , sSize1, sSpacing1] = checkConvergenceSSD_2D(I,SSE,
 %                    iterations.  [local, global] where local defines when
 %                    to refine the sSize and/or sSpacing and global defines
 %                    when to stop the iterations without refinement.
+%   dm: desired output mesh spacing
+%   wm: desired output subset size
 %
 % OUTPUTS
 % -------------------------------------------------------------------------
@@ -22,18 +25,21 @@ function [converged01, SSE1 , sSize1, sSpacing1] = checkConvergenceSSD_2D(I,SSE,
 %                vice versa
 %   SSE1: SSE for current iteration
 %   sSize1: interrogation window (subset) size for the current iteration
-%   sSpacing1: interrogation window (subset) spacing for the current
+%   sSpacing1: interrogation window (subset) spacing for the current 
 %              iteration
-%
+%   
 % NOTES
 % -------------------------------------------------------------------------
 % You are welcome to change the convergence method however you'd like. The
 % default constants are based on empirical results.
-%
+% 
 % If used please cite:
-% Bar-Kochba E., Toyjanova J., Andrews E., Kim K., Franck C. (2014) A fast
-% iterative digital volume correlation algorithm for large deformations.
+% Bar-Kochba E., Toyjanova J., Andrews E., Kim K., Franck C. (2014) A fast 
+% iterative digital volume correlation algorithm for large deformations. 
 % Experimental Mechanics. doi: 10.1007/s11340-014-9874-2
+% 
+% Modified by Jacob Notbohm, University of Wisconsin-Madison, 2016
+% 
 
 I{1}(isnan(I{1})) = 0;
 I{2}(isnan(I{2})) = 0;
@@ -60,32 +66,33 @@ converged01 = 0;
 if iteration > 1 % skip before first displacement estimation
     sSize1 = sSize0/2; % window size refinement
     
-    % ensure that all subset sizes are at minimum 32 pixels in length
-    sSize1(sSize1 < 16) = 16;
+    % Ensure subsets are at least the target size, wm voxel
+    sSize1(sSize1 < wm) = wm; % JKN
     
-    % window spacing refinement. Only do if the sSpacing > 8 pixels
-    if (sSpacing0 > 8)
+    % Window spacing refinement. Only refine if the sSpacing > dm pixels
+    if (sSpacing0 >= 2*dm)
         sSpacing1 = sSize1/2;
-    end
+    elseif sSpacing0 > dm % JKN
+        sSpacing1 = dm; 
+    end 
     
-    if prod(single(sSpacing1 == 16)) % condition if spacing = 16
-        
-        idx = (find(prod(single(sSpacing == 16),2))-1):iteration;
+    if prod(single(sSpacing1 == 2*dm)) % condition if spacing = 2*dm
+      
+        idx = (find(prod(single(sSpacing == 2*dm),2))-1):iteration;
         if length(idx) > 2
             dSSE = diff(SSE(idx)); % calculate difference
             dSSE = dSSE/dSSE(1); % normalize difference
-            
+             
             % if dSSE meets first convergence criteria then refine spacing
-            % to the minimum value, 8 voxels.
+            % to the minimum value, dm voxels.
             if dSSE(end) <= convergenceCrit(1)
-                sSize1 = sSize0; sSpacing1 = [8 8];
-                
+                sSize1 = sSize0; sSpacing1 = [dm, dm]; 
             end
         end
         
-        % condition if spacing is the minimum, 8 voxels
-    elseif  prod(single(sSpacing1 == 8))
-        idx = (find(prod(single(sSpacing == 8),2))-1):iteration;
+    % condition if spacing is the target value, dm voxels
+    elseif  prod(single(sSpacing1 == dm))
+        idx = (find(prod(single(sSpacing == dm),2))-1):iteration;
         
         if length(idx) > 2
             dSSE = diff(SSE(idx));
@@ -94,7 +101,7 @@ if iteration > 1 % skip before first displacement estimation
             % if dSSE meets first convergence criteria and spacing is the
             % mimumum then convergence has been met and stop all
             % iterations.
-            if dSSE(end) <= convergenceCrit(2)
+            if dSSE(end) <= convergenceCrit(2) 
                 sSize1 = sSize0; sSpacing1 = sSpacing0;
                 converged01 = 1;
             end

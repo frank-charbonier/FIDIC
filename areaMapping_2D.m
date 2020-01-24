@@ -1,7 +1,8 @@
 function I = areaMapping_2D(varargin)
+%AREAMAPPING images for 2-D images
 % I = areaMapping(I0,m,u0) symmetrically warps undeformed
 % and deformed 2-D images by the displacement field from previous iteration
-% using trilinear interpolation.
+% using biilinear interpolation.
 %
 % INPUTS
 % -------------------------------------------------------------------------
@@ -47,7 +48,7 @@ end
 
 u = cell(1,2);
 for i = 1:2
-    u{i} = interp2(u0{i},m_u0{1}, m_u0{2},'spline',NaN);
+    u{i} = interp2(u0{i},m_u0{1}, m_u0{2},'linear',NaN);
     %u{i} = mirt2D_mexinterp(u0{i}, m_u0{1}, m_u0{2}); %Uses cpp for
                                                         %interpolation, minor
                                                         %performance gain at

@@ -51,7 +51,7 @@ clc;
 %% --- INPUTS ---
 
 % % --- Inputs called by function ---
-% % Uncomment these if you don't to run as a function
+% % Uncomment these if you don't want to run as a function
 % 
 % % Reference image file name. If no reference image (eg, for computing cell
 % % velocities), enter []. Note that if [] is entered, num_images must be at

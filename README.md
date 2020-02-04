@@ -1,15 +1,23 @@
+## Notes on This Version
 This version of FIDIC has been updated by Jacob Notbohm, University of Wisconsin-Madison, 2020
 
+The code has been modified to add user control over the desired subset (window)
+size and spacing. Additionally, the code outputs the x and y gridpoints specifying
+the centers of each subset. Lastly, the script run_FIDIC.m has been added to load
+(multipage) tif files.
 
+## Description of Original Version
 
-The Fast Iterative Digital Image Correlation Algorithm (FIDIC) is a 2D version of FIDVC algorithm (please see [Bar-Kochba, Toyjanova et al., Exp. Mechanics, 2014](http://link.springer.com/article/10.1007/s11340-014-9874-2?sa_campaign=email/event/articleAuthor/onlineFirst) for more details) to find dispalcements fields in a 2D image. 
+The Fast Iterative Digital Image Correlation Algorithm (FIDIC) is a 2D version of FIDVC algorithm 
+(please see [Bar-Kochba, Toyjanova et al., Exp. Mechanics, 2014]
+http://link.springer.com/article/10.1007/s11340-014-9874-2?sa_campaign=email/event/articleAuthor/onlineFirst) for more details) 
+to find displacements fields in a 2D image. 
 
-* [Download latest version v1.1!](https://github.com/FranckLab/FIDIC/releases)
 * [FAQ](https://github.com/FranckLab/FIDIC/blob/master/README.md#faq)
 * [Questions/Issues](https://github.com/FranckLab/FIDIC/issues)
 * [Bug Fixes/history](https://github.com/FranckLab/FIDIC/wiki/Bug-Fixes!)
-* [Franck Lab](http://franck.engin.brown.edu)
- 
+* [Franck Lab](https://www.franck.engr.wisc.edu/)
+
 
 ## Cite
 If used please cite:
@@ -27,4 +35,6 @@ If used please cite:
 ```
 
 ## Contact and support
-For questions, please first refer to [FAQ](https://github.com/FranckLab/FIDIC#faq) and [Questions/Issues](https://github.com/FranckLab/FIDIC/issues). Add a new question if similar issue hasn't been reported. We shall help you at the earliest. The author's contact information can be found at [Franck Lab](http://franck.engin.brown.edu).
+For questions, please first refer to [FAQ](https://github.com/FranckLab/FIDIC#faq) and [Questions/Issues](https://github.com/FranckLab/FIDIC/issues). 
+Add a new question if a similar issue hasn't been reported. 
+The author's contact information can be found at [Franck Lab](https://www.franck.engr.wisc.edu/).

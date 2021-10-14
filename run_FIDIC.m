@@ -45,13 +45,13 @@ function run_FIDIC(varargin)
 % 
 
 % clear;
-close all;
-clc;
+% close all;
+% clc;
 
 %% --- INPUTS ---
 
 % % --- Inputs called by function ---
-% % Uncomment these if you don't want to run as a function
+% % Uncomment these if you don't to run as a function
 % 
 % % Reference image file name. If no reference image (eg, for computing cell
 % % velocities), enter []. Note that if [] is entered, num_images must be at
@@ -59,12 +59,12 @@ clc;
 % % fname_ref = 'slice526_t06.tif'; 
 % fname_ref = [];
 % % Deformed image filaname (can be a multipage tif)
-% fname_multipage = 'pos14.tif'; % Current image (multipage tif)
+% fname_multipage = '200212-Pos16_gray.tif'; % Current image (multipage tif)
 % % Incremental (inc = 1) or cumulative (inc = 0) correlation
 % inc = 1;
 % 
 % % Name of file of saved data
-% savename = 'FIDIC_results_w0=64.mat';
+% savename = 'DIC_results_w0=64_inc.mat';
 % 
 % % Target subset size (pix). Note that smaller subset size is 
 % % susceptible to larger noise.
@@ -77,9 +77,9 @@ clc;
 % d0 = w0/4;
 % 
 % % Images to correlate
-% image_seq = [];
+% image_seq = 2:69;
 
-% Parse function inputs
+% --- Parse function inputs ---
 fname_ref = varargin{1};
 fname_multipage = varargin{2};
 savename = varargin{3};

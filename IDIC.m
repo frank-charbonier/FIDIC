@@ -73,7 +73,7 @@ while ~converged01 && i - 1 < maxIterations
         [I, m] = parseImages(I,sSize(i,:),sSpacing(i,:));
         
         % run cross-correlation to get an estimate of the displacements
-        [du, cc] = DIC(I,sSize(i,:),sSpacing(i,:),DICPadSize,ccThreshold);
+        [du, cc] = DIC(I,sSize(i,:),sSpacing(i,:),DICPadSize,ccThreshold,wm);
   
         % add the displacements from previous iteration to current
         waitbar(3/7,wb,'Adding displacements from previous iteration');

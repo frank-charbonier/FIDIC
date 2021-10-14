@@ -9,7 +9,9 @@ function [u, cc] = DIC(varargin)
 %   sSize: interrogation window (subset) size
 %   sSpacing: interrogation window (subset) spacing.  Determines window
 %             overlap factor
+%   DICPadSize: 
 %   ccThreshold: threshold value that defines a bad cross-correlation
+%   wm: taget subset size
 %
 % OUTPUTS
 % -------------------------------------------------------------------------
@@ -21,12 +23,12 @@ function [u, cc] = DIC(varargin)
 % all functions are self contained
 %
 % If used please cite:
-% Bar-Kochba E., Toyjanova J., Andrews E., Kim K., Franck C. (2014) A fast 
-% iterative digital volume correlation algorithm for large deformations. 
+% Bar-Kochba E., Toyjanova J., Andrews E., Kim K., Franck C. (2014) A fast
+% iterative digital volume correlation algorithm for large deformations.
 % Experimental Mechanics. doi: 10.1007/s11340-014-9874-2
-% 
-% Modified by Jacob Notbohm, University of Wisconsin-Madison, 2018
-% 
+%
+% Modified by Jacob Notbohm, University of Wisconsin-Madison, 2018-2021
+%
 
 % Parse inputs and create meshgrid
 [I,m,mSize,sSize,MTF,M,ccThreshold] = parseInputs(varargin{:});
@@ -72,7 +74,7 @@ for k = 1:mSize_
     catch
         u12(k,:) = nan;
     end
-        
+    
     % waitbar calculations (update only every 100 iterations)
     if rem(k,100) == 0
         tRemaining = (toc(tStart)*(mSize_ - k)); % Time remaining for waitbar
@@ -103,6 +105,7 @@ sSize = varargin{2};
 sSpacing = varargin{3};
 padSize = varargin{4};
 ccThreshold = varargin{5};
+wm = varargin{6};
 
 % pad images with zeros so that we don't grab any subset outside of the image
 % domain. This would produce an error
@@ -139,8 +142,11 @@ end
 
 M{2} = M{1}'*M{1};
 
-% Generate Moduluar transfer function (see eq. 3)
-[~,~,MTF] = generateMTF(sSize);
+% Generate Moduluar transfer function (see eq. 3). The 2nd input is the
+% equation number used to produce the MTF from the paper cited in the
+% subfunction generateMTF. Options are 4, 5, or 6. See comments of 
+% generateMTF for more info.
+MTF = generateMTF(sSize, wm, 6);
 
 %% Parse outputs
 
@@ -181,7 +187,7 @@ function    duvw = lsqPolyFit2(b, M, trMM)
 % for i = 1:size(m,1)
 %    x = m(i,1); y = m(i,2); z = m(i,3);
 %    M1(i,:) = [1,x,y,z,x^2,x*y,x*z,y^2,y*z,z^2];  %3D case
-%               1 2 3 4  5   6   7   8   9   10 
+%               1 2 3 4  5   6   7   8   9   10
 
 %    M1(i,:) = [1,x,y,x^2,x*y,y^2];                %2D Case
 %               1 2 3  5   6   8
@@ -203,65 +209,93 @@ duvw = (A\(-x([2 3])));
 end
 
 %% ========================================================================
-function varargout = generateMTF(sSize)
+function MTF = generateMTF(sSize, wm, eq_no)
 % MTF functions taken from
 % J. Nogueira, A Lecuona, P. A. Rodriguez, J. A. Alfaro, and A. Acosta.
 % Limits on the resolution of correlation PIV iterative methods. Practical
 % implementation and design of weighting functions. Exp. Fluids,
 % 39(2):314{321, July 2005. doi: 10.1007/s00348-005-1017-1
 
-%% equation 4
+% Inputs
+% - sSize is actual subset size
+% - wm is target subset size
+% - The option eq_no specifies which equation for the MTF is used. Options
+% are taken from different equations in Nogueira et al. Suitable options
+% are 4, 5, or 6 corresponding to Eqs. 4, 5, and 6 of the paper. Note that
+% the manuscript suggests Eq. 6 as the ``best'' choice.
 
-if prod(single(sSize == 32))
-    sSize = sSize(1);
+% Choose condition to generate the MTF. If the condition below isn't
+% satisfied, the MTF used is just a constant array and hence has no effect
+% if prod(single(sSize ~= 32)) % original by franck group
+if prod(single(sSize ~= wm)) % JN suggestion: apply MTF when the target subset is reached; before target is reached, the correlation is probably doing large scale drift correction, in which case using the MTF could cause a correlation to a local maximum rather than the globl max (only works for square subsets)
     
-    x = cell(1,3);
-    [x{1}, x{2}] = meshgrid(1:sSize,1:sSize);
-    
-    nu{1} = 1;
-    for i = 1:2
-        x{i} = x{i} - sSize/2 - 0.5;
-        x{i} = abs(x{i}/sSize);
-        nu{1} = nu{1}.*(3*(4*x{i}.^2-4*x{i}+1));
-    end
-    
-    %% equation 5
-    [x{1}, x{2}] = meshgrid(1:sSize,1:sSize);
-    
-    for i = 1:2, x{i} = x{i} - sSize/2 - 0.5; end
-    
-    r = abs(sqrt(x{1}.^2 + x{2}.^2)/sSize);
-    nu{2}  = zeros(size(r));
-    nu{2}(r < 0.5) = 24/pi*(4*r(r < 0.5).^2-4*r(r < 0.5)+1);
-    
-    %% equation 6
-    [x{1}, x{2}] = meshgrid(1:sSize,1:sSize);
-    
-    nu{3} = 1;
-    for i = 1:2,
-        x{i} = x{i} - sSize/2 - 0.5;
-        x{i} = (x{i}/sSize);
-        
-        nu{3} = nu{3}.*(12*abs(x{i}).^2 - 12*abs(x{i}) + 3 + ...
-            0.15*cos(4*pi*x{i}) + 0.20*cos(6*pi*x{i}) + ...
-            0.10*cos(8*pi*x{i}) + 0.05*cos(10*pi*x{i}));
-        
-    end
-    nu{3}(nu{3} < 0) = 0;
+    nu = ones(sSize(1),sSize(2));
     
 else
     
-    nu{1} = ones(sSize(1),sSize(2));
-    nu{2} = nu{1};
-    nu{3} = nu{1};   %==== Based onthe usage and the paper this comes from
-                     %nu should remain 3-dims even for the 2D case
+    % MTF appears to be written assuming square subsets
+    sSize = sSize(1);
+    
+    switch eq_no
+        
+        %% equation 4
+        case 4
+            
+            x = cell(1,3);
+            [x{1}, x{2}] = meshgrid(1:sSize,1:sSize);
+            
+            nu = 1;
+            for i = 1:2
+                x{i} = x{i} - sSize/2 - 0.5;
+                x{i} = abs(x{i}/sSize);
+                nu = nu.*(3*(4*x{i}.^2-4*x{i}+1));
+            end
+            
+        %% equation 5
+        case 5
+            
+            [x{1}, x{2}] = meshgrid(1:sSize,1:sSize);
+            
+            for i = 1:2
+                x{i} = x{i} - sSize/2 - 0.5; 
+            end
+            
+            r = abs(sqrt(x{1}.^2 + x{2}.^2)/sSize);
+            nu  = zeros(size(r));
+            nu(r < 0.5) = 24/pi*(4*r(r < 0.5).^2-4*r(r < 0.5)+1);
+            
+        %% equation 6
+        case 6
+            [x{1}, x{2}] = meshgrid(1:sSize,1:sSize);
+            
+            nu = 1;
+            for i = 1:2
+                x{i} = x{i} - sSize/2 - 0.5;
+                x{i} = (x{i}/sSize);
+                
+                nu = nu.*(12*abs(x{i}).^2 - 12*abs(x{i}) + 3 + ...
+                    0.15*cos(4*pi*x{i}) + 0.20*cos(6*pi*x{i}) + ...
+                    0.10*cos(8*pi*x{i}) + 0.05*cos(10*pi*x{i}));
+            end
+            nu(nu < 0) = 0;
+            
+    end
+    
+        
+    % all equations coded above are actually for the square of nu, so take sqrt
+    nu = sqrt(nu);
+    
+%     % normalize MTF
+%     nu = nu/sum(nu(:));
+    
+    
+%     nu = cellfun(@(x) x/sum(x(:)), nu, 'UniformOutput',0);
+%     nu = cellfun(@sqrt, nu, 'UniformOutput',0);
     
 end
 
-nu = cellfun(@(x) x/sum(x(:)), nu, 'UniformOutput',0);
-nu = cellfun(@sqrt, nu, 'UniformOutput',0);
-
-varargout = nu;
+% Output MTF
+MTF = nu;
 
 end
 
@@ -278,7 +312,7 @@ end
 cc = cc - minOS;
 cc = cc/(max(I{1}(:))*max(I{2}(:)));
 ccMask = double(cc >= ccThreshold);
- 
+
 if prod(ccMask(:)) == 0 % IF statement added 4/12/18 BY JN. This avoids an error when prod(ccMask(:))==1
     CC = bwconncomp(~ccMask);
     [~,idx] = max(cellfun(@numel,CC.PixelIdxList));

@@ -1,3 +1,5 @@
+# FIDIC DOCUMENTATION
+
 ## Notes on This Version
 This version of FIDIC has been updated by Jacob Notbohm, University of Wisconsin-Madison, 2020
 
@@ -18,6 +20,13 @@ to find displacements fields in a 2D image.
 * [Bug Fixes/history](https://github.com/FranckLab/FIDIC/wiki/Bug-Fixes!)
 * [Franck Lab](https://www.franck.engr.wisc.edu/)
 
+## Usage Notes
+
+You will run **run_FIDIC.m**. All other files are subfunctions. The comments
+in run_FIDIC.m give an explanation of the input parameters.
+
+This m file is currently set up to run as a function, but you can comment out the first line
+and uncomment the section ``INPUTS'' to run as a script.
 
 ## Cite
 If used please cite:
@@ -33,7 +42,6 @@ If used please cite:
   publisher={Springer}
 }
 ```
-
 ## Contact and support
 For questions, please first refer to [FAQ](https://github.com/FranckLab/FIDIC#faq) and [Questions/Issues](https://github.com/FranckLab/FIDIC/issues). 
 Add a new question if a similar issue hasn't been reported. 

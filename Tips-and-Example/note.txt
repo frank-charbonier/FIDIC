@@ -1,3 +1,0 @@
-im01 and im02 are 2 images captured at the same position.
-
-Notice the speckle pattern is dense and high contrast.

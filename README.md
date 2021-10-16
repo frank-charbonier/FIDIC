@@ -8,6 +8,16 @@ size and spacing. Additionally, the code outputs the x and y gridpoints specifyi
 the centers of each subset. Lastly, the script run_FIDIC.m has been added to load
 (multipage) tif files.
 
+## Usage Notes
+
+You will run **run_FIDIC.m**. All other files are subfunctions. The comments
+in run_FIDIC.m give an explanation of the input parameters.
+
+This m file is currently set up to run as a function, but you can comment out the first line
+and uncomment the section ``INPUTS'' to run as a script.
+
+See the subdirectory Tips-and-Example for user advice and an example (with a sample set of images).
+
 ## Description of Original Version
 
 The Fast Iterative Digital Image Correlation Algorithm (FIDIC) is a 2D version of FIDVC algorithm 
@@ -20,14 +30,6 @@ to find displacements fields in a 2D image.
 * [Bug Fixes/history](https://github.com/FranckLab/FIDIC/wiki/Bug-Fixes!)
 * [Franck Lab](https://www.franck.engr.wisc.edu/)
 
-## Usage Notes
-
-You will run **run_FIDIC.m**. All other files are subfunctions. The comments
-in run_FIDIC.m give an explanation of the input parameters.
-
-This m file is currently set up to run as a function, but you can comment out the first line
-and uncomment the section ``INPUTS'' to run as a script.
-
 ## Cite
 If used please cite:
 [Bar-Kochba E., Toyjanova J., Andrews E., Kim K., Franck C. (2014) A fast iterative digital volume correlation algorithm for large deformations. Experimental Mechanics. doi: 10.1007/s11340-014-9874-2](http://link.springer.com/article/10.1007/s11340-014-9874-2?sa_campaign=email/event/articleAuthor/onlineFirst)
@@ -37,7 +39,8 @@ If used please cite:
   title={A fast iterative digital volume correlation algorithm for large deformations},
   author={Bar-Kochba, E and Toyjanova, J and Andrews, E and Kim, K-S and Franck, C},
   journal={Experimental Mechanics},
-  pages={1--14},
+  pages={261--274},
+  volume={55},
   year={2014},
   publisher={Springer}
 }

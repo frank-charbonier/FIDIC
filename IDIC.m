@@ -41,7 +41,7 @@ function [u, xy, u_c, cc, dm] = IDIC(varargin)
 % 
 
 
-wb = waitbar(0,'Parsing Inputs','Name','Running IDIC');
+% wb = waitbar(0,'Parsing Inputs','Name','Running IDIC');
 
 % PRESET CONSTANTS
 maxIterations = 20; % maximum number of iterations (default 20)
@@ -60,14 +60,14 @@ t0 = tic;
 while ~converged01 && i - 1 < maxIterations
     ti = tic;
     
-    set(wb,'name',['Running IDIC (Iteration ',num2str(i-1),')']);
-    waitbar(0/7,wb,'Checking Convergence');
+    % set(wb,'name',['Running IDIC (Iteration ',num2str(i-1),')']);
+    % waitbar(0/7,wb,'Checking Convergence');
     % Check for convergence
      [converged01, SSE(i-1) , sSize(i,:), sSpacing(i,:)] = checkConvergenceSSD_2D(I,SSE,sSize,sSpacing,convergenceCrit,dm,wm);
 
      % Output subset size and spacing to follow progress
-     fprintf('Subset size for iteration %.0f is %.0fx%.0f pix\n',[i-1, sSize(i,:)]);
-     fprintf('Subset spacing for iteration %.0f is %.0fx%.0f pix\n',[i-1, sSpacing(i,:)]);
+     % fprintf('Subset size for iteration %.0f is %.0fx%.0f pix\n',[i-1, sSize(i,:)]);
+     % fprintf('Subset spacing for iteration %.0f is %.0fx%.0f pix\n',[i-1, sSpacing(i,:)]);
      
     if ~converged01
         [I, m] = parseImages(I,sSize(i,:),sSpacing(i,:));
@@ -76,25 +76,25 @@ while ~converged01 && i - 1 < maxIterations
         [du, cc] = DIC(I,sSize(i,:),sSpacing(i,:),DICPadSize,ccThreshold,wm);
   
         % add the displacements from previous iteration to current
-        waitbar(3/7,wb,'Adding displacements from previous iteration');
+        % waitbar(3/7,wb,'Adding displacements from previous iteration');
         [u, ~, cc] = addDisplacements_2D(u,du,cc,m,dm);
         
         % filter the  displacements using a predictor filter
-        waitbar(4/7,wb,'Filtering Displacements');
+        % waitbar(4/7,wb,'Filtering Displacements');
         u = filterDisplacements_2D(u,sSize(i,:)/dm);
         
         % remove outliers in displacement field
-        waitbar(5/7,wb,'Removing Outliers');
+        % waitbar(5/7,wb,'Removing Outliers');
         u = removeOutliers_2D(u);
 
         % mesh and pad images based on new subset size and spacing
         [I, m] = parseImages(I0,sSize(i,:),sSpacing(i,:));
         
         % map areas based on displacment field
-        waitbar(6/7,wb,'Warping Images');
+        % waitbar(6/7,wb,'Warping Images');
         I = areaMapping_2D(I,m,u);
         
-        disp(['Elapsed time (iteration ',num2str(i-1),'): ',num2str(toc(ti))]);
+        % disp(['Elapsed time (iteration ',num2str(i-1),'): ',num2str(toc(ti))]);
         i = i + 1;
     end
     
@@ -116,7 +116,7 @@ xy{2} = m{2}-xypad(2);
 % parseOutputs removes padding
 [u, xy, cc] = parseOutputs(u,xy,cc,dm,padSize);
 
-delete(wb);
+% delete(wb);
 
 disp(['Convergence at iteration ',num2str(i)]);
 disp(['Total time: ',num2str(toc(t0))]);

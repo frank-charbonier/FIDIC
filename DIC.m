@@ -39,9 +39,9 @@ u12 = zeros(mSize_,2);
 cc = zeros(mSize_,1);
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-wb = findall(0,'Tag','TMWWaitbar'); wb = wb(1);
+% wb = findall(0,'Tag','TMWWaitbar'); wb = wb(1);
 
-waitbar(1/7,wb,'Estimating Displacements (Time Remaining: )');
+% waitbar(1/7,wb,'Estimating Displacements (Time Remaining: )');
 
 for k = 1:mSize_
     
@@ -78,14 +78,14 @@ for k = 1:mSize_
     % waitbar calculations (update only every 100 iterations)
     if rem(k,100) == 0
         tRemaining = (toc(tStart)*(mSize_ - k)); % Time remaining for waitbar
-        waitbar(1/7*(k/mSize_ + 1),wb,['Estimating Displacements (Time Remaining: ',...
-            datestr(datenum(0,0,0,0,0,tRemaining),'MM:SS'),')'])
+        % waitbar(1/7*(k/mSize_ + 1),wb,['Estimating Displacements (Time Remaining: ',...
+        %     datestr(datenum(0,0,0,0,0,tRemaining),'MM:SS'),')'])
     end
     
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Reshape displacements and set bad correlations to zero
-waitbar(2/7,wb,'Removing Bad Correlations')
+% waitbar(2/7,wb,'Removing Bad Correlations')
 
 cc = reshape(double(cc),mSize);
 [cc, ccMask] = removeBadCorrelations(I,cc,ccThreshold);
